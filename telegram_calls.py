@@ -34,6 +34,22 @@ HEADER_ROW_NAMES = 4   # строка с именами менеджеров (о
 HEADER_ROW_METRICS = 5  # строка с названиями метрик
 DATA_START_ROW = 6
 
+# короткие подписи метрик для сообщения
+SHORT_LABELS = {
+    "Обзвонено": "Обзвонено",
+    "Взяли трубку": "Взяли трубку",
+    "Не взяли / не беспокоить": "Не взяли",
+}
+
+
+def fmt_num(value):
+    """Google Sheets отдаёт целые числа как float (0.0, 3.0) — приводим к int."""
+    if value is None:
+        return 0
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
 
 def download_workbook():
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
@@ -103,7 +119,7 @@ def build_message(target_date):
     columns = build_column_map(ws)
     row = find_today_row(ws, target_date)
 
-    lines = [f"\U0001F4DE {target_date.strftime('%d.%m.%Y')} — отчёт по обзвонам за сегодня\n"]
+    lines = [f"\U0001F4DE {target_date.strftime('%d.%m.%Y')} — отчёт по обзвонам за сегодня", ""]
 
     if row is None:
         lines.append("Строка с сегодняшней датой не найдена в таблице.")
@@ -114,23 +130,24 @@ def build_message(target_date):
     for col, manager, metric in columns:
         if not managers or managers[-1][0] != manager:
             managers.append((manager, []))
-        value = ws.cell(row=row, column=col).value
-        if value is None:
-            value = 0
+        value = fmt_num(ws.cell(row=row, column=col).value)
         managers[-1][1].append((metric, value))
 
     totals = {}
     for manager, metrics in managers:
+        lines.append(f"👤 {manager}")
         parts = []
         for metric, value in metrics:
-            parts.append(f"{metric}: {value}")
-            totals[metric] = totals.get(metric, 0) + (value if isinstance(value, (int, float)) else 0)
-        lines.append(f"👤 {manager} — " + ", ".join(parts))
+            label = SHORT_LABELS.get(metric, metric)
+            parts.append(f"{label}: {value}")
+            if isinstance(value, (int, float)):
+                totals[label] = totals.get(label, 0) + value
+        lines.append("   " + " · ".join(parts))
+        lines.append("")
 
     if totals:
-        lines.append("")
-        total_parts = [f"{metric}: {value}" for metric, value in totals.items()]
-        lines.append("\U0001F4CA Итого по всем менеджерам — " + ", ".join(total_parts))
+        total_parts = [f"{label}: {fmt_num(value)}" for label, value in totals.items()]
+        lines.append("\U0001F4CA Итого: " + " · ".join(total_parts))
 
     return "\n".join(lines).strip()
 
