@@ -1,0 +1,22 @@
+name: Daily calls digest to Telegram
+
+on:
+  schedule:
+    - cron: "0 19 * * *"  # 22:00 по Москве (MSK = UTC+3)
+  workflow_dispatch: {}    # позволяет запустить вручную для теста
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install openpyxl
+      - name: Run calls digest script
+        env:
+          CALLS_BOT_TOKEN: ${{ secrets.CALLS_BOT_TOKEN }}
+          CALLS_CHAT_ID: ${{ secrets.CALLS_CHAT_ID }}
+        run: python telegram_calls.py
