@@ -158,18 +158,24 @@ def build_message(target_date):
 
 
 def send_telegram(text: str):
+    # TELEGRAM_CHAT_ID может содержать несколько chat_id через запятую —
+    # сообщение уходит в каждый из них.
+    chat_ids = [c.strip() for c in CHAT_ID.split(",") if c.strip()]
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    data = urllib.parse.urlencode({
-        "chat_id": CHAT_ID,
-        "text": text,
-        "disable_web_page_preview": "true",
-    }).encode()
-    req = urllib.request.Request(url, data=data, method="POST")
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        result = json.loads(resp.read().decode())
-    if not result.get("ok"):
-        raise RuntimeError(f"Telegram API error: {result}")
-    return result
+    results = []
+    for chat_id in chat_ids:
+        data = urllib.parse.urlencode({
+            "chat_id": chat_id,
+            "text": text,
+            "disable_web_page_preview": "true",
+        }).encode()
+        req = urllib.request.Request(url, data=data, method="POST")
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode())
+        if not result.get("ok"):
+            raise RuntimeError(f"Telegram API error for chat_id={chat_id}: {result}")
+        results.append(result)
+    return results
 
 
 if __name__ == "__main__":
