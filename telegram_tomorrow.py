@@ -57,9 +57,11 @@ def find_sheet(wb, name: str):
 
 
 def parse_ru_date(cell_value):
-    """Принимает либо datetime, либо строку вида '27 июля'."""
+    """Возвращает (год, месяц, день). Год может быть None, если в ячейке
+    просто текст вида '27 июля' без реальной даты (тогда сверяем без года,
+    как запасной вариант)."""
     if isinstance(cell_value, datetime):
-        return cell_value.day, cell_value.month
+        return cell_value.year, cell_value.month, cell_value.day
     if not cell_value:
         return None
     m = re.match(r"^\s*(\d{1,2})\s+([а-яёА-ЯЁ]+)", str(cell_value).strip())
@@ -69,7 +71,17 @@ def parse_ru_date(cell_value):
     month = MONTHS_RU.get(m.group(2).lower())
     if month is None:
         return None
-    return day, month
+    return None, month, day
+
+
+def date_matches(parsed, target):
+    """parsed = (year_or_None, month, day) для ru-листов."""
+    if parsed is None:
+        return False
+    year, month, day = parsed
+    if year is None:
+        return (month, day) == (target.month, target.day)
+    return (year, month, day) == (target.year, target.month, target.day)
 
 
 def parse_full_date(cell_value):
@@ -130,7 +142,7 @@ def collect_tomorrow_items(ws, sheet_name: str, target_date):
             matched = d == target_date
         else:
             parsed = parse_ru_date(date_cell.value)
-            matched = parsed == (target_date.day, target_date.month)
+            matched = date_matches(parsed, target_date)
         if not matched:
             continue
         for cell in row[1:]:
