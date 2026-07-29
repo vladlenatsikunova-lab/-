@@ -4,12 +4,15 @@
 Источник: Google Sheets "Скрипт и трекер обзвона | ЯМАЛМОТО", лист "Отчёт по дням".
 Структура листа:
   - колонка A — дата (строка данных начинается с 6-й строки)
-  - строка 4 — имена менеджеров, объединённые по 3 колонки на менеджера
-  - строка 5 — подписи метрик на каждую из 3 колонок: "Обзвонено", "Взяли трубку",
-    "Не взяли / не беспокоить"
+  - строка 4 — имена менеджеров, объединённые ячейки (у каждого менеджера
+    может быть НЕСКОЛЬКО отдельных блоков колонок — старые метрики и новые
+    метрики лежат раздельно, но относятся к одному и тому же менеджеру)
+  - строка 5 — подписи метрик на каждую колонку
+  - в конце листа есть отдельный блок "ИТОГО (весь отдел)" — это НЕ менеджер,
+    а сумма по всем менеджерам; скрипт его пропускает и считает итоги сам,
+    чтобы не задваивать цифры.
 Скрипт сам вычитывает имена менеджеров и колонки из строк 4-5, поэтому если
-менеджеров станет больше/меньше или их переставят местами — ничего в коде
-менять не надо.
+менеджеров или метрик станет больше/меньше — ничего в коде менять не надо.
 
 Нужны переменные окружения:
   CALLS_BOT_TOKEN — токен бота (@ai_yamalmoto_baza_bot)
@@ -34,11 +37,19 @@ HEADER_ROW_NAMES = 4   # строка с именами менеджеров (о
 HEADER_ROW_METRICS = 5  # строка с названиями метрик
 DATA_START_ROW = 6
 
+TOTAL_BLOCK_PREFIX = "ИТОГО"  # так начинается заголовок агрегированного блока по отделу
+
 # короткие подписи метрик для сообщения
 SHORT_LABELS = {
     "Обзвонено": "Обзвонено",
     "Взяли трубку": "Взяли трубку",
     "Не взяли / не беспокоить": "Не взяли",
+    "Негатив": "Негатив",
+    "Вступили в закрытый чат": "Вступили в чат",
+    "Запросы на технику": "Запросы техника",
+    "Запросы на запчасти": "Запросы запчасти",
+    "Продажи запчастей": "Продажи запчастей",
+    "Продажи техники": "Продажи техники",
 }
 
 
@@ -67,8 +78,10 @@ def find_sheet(wb, name: str):
 
 
 def build_column_map(ws):
-    """Возвращает список (col_idx, manager_name, metric_label) для всех
-    колонок с данными, начиная с колонки B."""
+    """Возвращает список (col_idx, manager_name, metric_label) для всех колонок
+    с данными по менеджерам. Колонки агрегированного блока "ИТОГО (весь отдел)"
+    сюда не попадают — этот блок пропускается, так как итоги считаются сами
+    по факту суммирования данных менеджеров (см. build_message)."""
     columns = []
     current_manager = None
     max_col = ws.max_column
@@ -77,14 +90,10 @@ def build_column_map(ws):
         if name_cell:
             current_manager = str(name_cell).strip()
         metric_cell = ws.cell(row=HEADER_ROW_METRICS, column=col).value
-        if not metric_cell:
-            # Пустая колонка метрики — считаем, что данные менеджеров закончились
-            if current_manager is None:
-                continue
-            else:
-                break
-        if current_manager is None:
+        if not metric_cell or current_manager is None:
             continue
+        if current_manager.upper().startswith(TOTAL_BLOCK_PREFIX):
+            continue  # это блок "ИТОГО (весь отдел)", а не менеджер — пропускаем
         columns.append((col, current_manager, str(metric_cell).strip()))
     return columns
 
@@ -125,16 +134,22 @@ def build_message(target_date):
         lines.append("Строка с сегодняшней датой не найдена в таблице.")
         return "\n".join(lines).strip()
 
-    # группируем колонки по менеджеру, сохраняя порядок появления
-    managers = []
+    # Группируем колонки по менеджеру. Один и тот же менеджер может встречаться
+    # в НЕСКОЛЬКИХ блоках колонок (старые метрики + новые метрики лежат отдельно) —
+    # поэтому группируем по имени, а не по соседству колонок, чтобы все метрики
+    # одного менеджера попали в один блок сообщения.
+    managers_order = []
+    managers_data = {}
     for col, manager, metric in columns:
-        if not managers or managers[-1][0] != manager:
-            managers.append((manager, []))
+        if manager not in managers_data:
+            managers_data[manager] = []
+            managers_order.append(manager)
         value = fmt_num(ws.cell(row=row, column=col).value)
-        managers[-1][1].append((metric, value))
+        managers_data[manager].append((metric, value))
 
     totals = {}
-    for manager, metrics in managers:
+    for manager in managers_order:
+        metrics = managers_data[manager]
         lines.append(f"👤 {manager}")
         parts = []
         for metric, value in metrics:
@@ -147,7 +162,7 @@ def build_message(target_date):
 
     if totals:
         total_parts = [f"{label}: {fmt_num(value)}" for label, value in totals.items()]
-        lines.append("\U0001F4CA Итого: " + " · ".join(total_parts))
+        lines.append("\U0001F4CA Итого по отделу: " + " · ".join(total_parts))
 
     return "\n".join(lines).strip()
 
