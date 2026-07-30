@@ -2,7 +2,7 @@ name: Daily calls digest to Telegram
 
 on:
   schedule:
-    - cron: "21 19 * * *"  # 22:21 по Москве (MSK = UTC+3) — сдвиг от начала часа снижает риск задержки в GitHub Actions
+    - cron: "0 18 * * *"  # 21:00 по Москве (MSK = UTC+3, без перевода часов)
   workflow_dispatch: {}    # позволяет запустить вручную для теста
 
 jobs:
