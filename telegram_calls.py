@@ -99,7 +99,20 @@ def build_column_map(ws):
 
 
 def today_msk():
-    return (datetime.now(timezone.utc) + timedelta(hours=3)).date()
+    """Дата, за которую формируем отчёт.
+
+    GitHub Actions иногда запускает cron с большой задержкой (бывает,
+    что вместо 21:00 скрипт стартует после полуночи). Если это произошло,
+    "сегодня" по часам уже успело смениться на новый день, за который
+    менеджеры физически ещё не могли ничего внести — и отчёт улетал бы
+    пустым, с одними нулями. Чтобы так не было: если сейчас раньше 6 утра
+    по Москве, считаем, что отчёт всё ещё "за вчера" (просто опоздавший),
+    и берём предыдущую календарную дату.
+    """
+    now_msk = datetime.now(timezone.utc) + timedelta(hours=3)
+    if now_msk.hour < 6:
+        now_msk -= timedelta(days=1)
+    return now_msk.date()
 
 
 def find_today_row(ws, target_date):
@@ -128,7 +141,7 @@ def build_message(target_date):
     columns = build_column_map(ws)
     row = find_today_row(ws, target_date)
 
-    lines = [f"\U0001F4DE {target_date.strftime('%d.%m.%Y')} — отчёт по обзвонам за сегодня", ""]
+    lines = [f"\U0001F4DE Отчёт по обзвонам за {target_date.strftime('%d.%m.%Y')}", ""]
 
     if row is None:
         lines.append("Строка с сегодняшней датой не найдена в таблице.")
