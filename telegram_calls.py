@@ -181,7 +181,9 @@ def build_message(target_date):
 
 
 def send_telegram(text: str):
-    chat_ids = [c.strip() for c in CHAT_ID.split(",") if c.strip()]
+    # dict.fromkeys вместо set — убирает дубликаты id (если в CALLS_CHAT_ID
+    # один и тот же чат случайно указан дважды), сохраняя порядок
+    chat_ids = list(dict.fromkeys(c.strip() for c in CHAT_ID.split(",") if c.strip()))
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     results = []
     for chat_id in chat_ids:
