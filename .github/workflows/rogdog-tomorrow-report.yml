@@ -1,0 +1,23 @@
+name: Rog-dog tomorrow content report to Telegram
+
+on:
+  # Расписание держит внешний будильник cron-job.org (он дёргает
+  # workflow_dispatch через GitHub API) — встроенный schedule не используется,
+  # чтобы бот не присылал отчёт дважды.
+  workflow_dispatch: {}    # позволяет запустить вручную для теста
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install openpyxl
+      - name: Run rog-dog tomorrow report script
+        env:
+          ROGDOG_BOT_TOKEN: ${{ secrets.ROGDOG_BOT_TOKEN }}
+          ROGDOG_CHAT_ID: ${{ secrets.ROGDOG_CHAT_ID }}
+        run: python telegram_rogdog_tomorrow.py
