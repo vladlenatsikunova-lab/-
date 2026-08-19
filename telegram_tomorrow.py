@@ -17,6 +17,7 @@ import io
 import json
 import os
 import re
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -42,10 +43,20 @@ STATUS_ICON = {"green": "✅", "yellow": "⚠️", "none": "⭕"}
 
 
 def download_workbook():
+    """Google иногда отвечает на экспорт таблицы дольше обычного —
+    пробуем несколько раз с увеличивающимся таймаутом, прежде чем сдаться."""
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlsx"
-    with urllib.request.urlopen(url, timeout=60) as resp:
-        data = resp.read()
-    return load_workbook(io.BytesIO(data), data_only=True)
+    last_error = None
+    for attempt, timeout in enumerate((60, 90, 120), start=1):
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as resp:
+                data = resp.read()
+            return load_workbook(io.BytesIO(data), data_only=True)
+        except Exception as e:
+            last_error = e
+            if attempt < 3:
+                time.sleep(10)
+    raise last_error
 
 
 def find_sheet(wb, name: str):
