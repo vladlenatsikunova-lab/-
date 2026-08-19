@@ -1,8 +1,9 @@
 name: Tomorrow content digest to Telegram
 
 on:
-  schedule:
-    - cron: "13 12 * * *"  # 15:13 по Москве (MSK = UTC+3) — сдвиг от начала часа снижает риск задержки в GitHub Actions
+  # Расписание теперь держит внешний будильник cron-job.org (он дёргает
+  # workflow_dispatch через GitHub API) — встроенный schedule отключён,
+  # чтобы бот не присылал отчёт дважды.
   workflow_dispatch: {}    # позволяет запустить вручную для теста
 
 jobs:
