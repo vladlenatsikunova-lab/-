@@ -579,14 +579,14 @@ document.getElementById('form').addEventListener('submit',function(e){
     h.value=p[1];
   });
   btn.disabled=true;msg.textContent='Отправляем…';
-  var sb=tf.querySelector('.t-submit,button[type=submit]');
+  tf.classList.remove('js-send-form-success');var sb=tf.querySelector('.t-submit,button[type=submit]');
   sb.click();
   var n=0,iv=setInterval(function(){
     n++;
     var ok=tf.querySelector('.js-successbox');
     var okShown=ok&&getComputedStyle(ok).display!=='none'&&ok.offsetHeight>0||tf.closest('.t-rec').querySelector('.t-form__successbox.t-form__successbox_visible');
     var er=tf.querySelector('.t-form__errorbox-middle');
-    if(okShown||tf.classList.contains('t-form_success')||(tf.querySelector('.t-form__successbox')&&getComputedStyle(tf.querySelector('.t-form__successbox')).display!=='none')){clearInterval(iv);msg.textContent='Заявка отправлена. Мы свяжемся с вами в ближайшее время.';f.reset();btn.disabled=false}
+    if(tf.classList.contains('js-send-form-success')||okShown||(tf.querySelector('.t-form__successbox')&&getComputedStyle(tf.querySelector('.t-form__successbox')).display!=='none')){clearInterval(iv);msg.textContent='Заявка отправлена. Мы свяжемся с вами в ближайшее время.';f.reset();btn.disabled=false}
     else if(er&&er.offsetHeight>0&&er.textContent.trim()){clearInterval(iv);msg.textContent='Проверьте имя и телефон: '+er.textContent.trim();btn.disabled=false}
     else if(n>40){clearInterval(iv);msg.textContent='Не получилось отправить, напишите нам в Telegram @geo_hacking';btn.disabled=false}
   },300);
