@@ -565,7 +565,7 @@ document.getElementById('form').addEventListener('submit',function(e){
   if(!msg){msg=document.createElement('p');msg.className='fmsg';msg.style.cssText='margin-top:14px;font-size:13px;color:var(--sunset)';f.appendChild(msg)}
   var g=function(id){return document.getElementById(id).value};
   var tf=document.querySelector('.t-rec form.t-form, form.t-form');
-  if(!tf){msg.textContent='Не получилось отправить, напишите нам в Telegram @geo_hacking';return}
+  if(!tf){msg.textContent='Не получилось отправить, напишите нам в Telegram @MARIA_YAMAL';return}
   var nm=tf.querySelector('input[name=Name],input[name=name],input[type=text]');
   var ph=tf.querySelector('input[type=tel],input[name=Phone],input[name=phone]');
   var setv=function(el,v){el.value=v;['input','change','blur'].forEach(function(ev){el.dispatchEvent(new Event(ev,{bubbles:true}))})};
@@ -586,9 +586,10 @@ document.getElementById('form').addEventListener('submit',function(e){
     var ok=tf.querySelector('.js-successbox');
     var okShown=ok&&getComputedStyle(ok).display!=='none'&&ok.offsetHeight>0||tf.closest('.t-rec').querySelector('.t-form__successbox.t-form__successbox_visible');
     var er=tf.querySelector('.t-form__errorbox-middle');
-    if(tf.classList.contains('js-send-form-success')||okShown||(tf.querySelector('.t-form__successbox')&&getComputedStyle(tf.querySelector('.t-form__successbox')).display!=='none')){clearInterval(iv);msg.textContent='Заявка отправлена. Мы свяжемся с вами в ближайшее время.';f.reset();btn.disabled=false}
+    if(tf.classList.contains('js-send-form-success')||(n>3&&!nm.value&&!ph.value)||okShown||(tf.querySelector('.t-form__successbox')&&getComputedStyle(tf.querySelector('.t-form__successbox')).display!=='none')){clearInterval(iv);msg.textContent='Заявка отправлена. Мы свяжемся с вами в ближайшее время.';f.reset();btn.disabled=false}
     else if(er&&er.offsetHeight>0&&er.textContent.trim()){clearInterval(iv);msg.textContent='Проверьте имя и телефон: '+er.textContent.trim();btn.disabled=false}
-    else if(n>40){clearInterval(iv);msg.textContent='Не получилось отправить, напишите нам в Telegram @geo_hacking';btn.disabled=false}
+    else if(n==25){msg.textContent='Отправляем… если появилось окно «Я не робот», отметьте галочку'}
+    else if(n>400){clearInterval(iv);msg.textContent='Не получилось отправить, напишите нам в Telegram @MARIA_YAMAL';btn.disabled=false}
   },300);
 });
 </script>
