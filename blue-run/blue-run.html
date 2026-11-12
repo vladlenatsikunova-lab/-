@@ -569,7 +569,10 @@ document.getElementById('form').addEventListener('submit',function(e){
   var nm=tf.querySelector('input[name=Name],input[name=name],input[type=text]');
   var ph=tf.querySelector('input[type=tel],input[name=Phone],input[name=phone]');
   var setv=function(el,v){el.value=v;['input','change','blur'].forEach(function(ev){el.dispatchEvent(new Event(ev,{bubbles:true}))})};
-  setv(nm,g('f-n'));setv(ph,g('f-p'));
+  var dg=g('f-p').replace(/\D/g,'');if(dg.length==11&&(dg[0]=='7'||dg[0]=='8'))dg=dg.slice(1);
+  if(dg.length!=10){msg.textContent='Проверьте телефон: нужен российский номер, 10 цифр после +7';return}
+  var fm='+7 ('+dg.slice(0,3)+') '+dg.slice(3,6)+'-'+dg.slice(6,8)+'-'+dg.slice(8);
+  setv(nm,g('f-n'));setv(ph,fm);
   [['Экспедиция','Blue Run, Чили · Патагония'],['Человек',g('f-c')],['Дата',g('f-d')]].forEach(function(p){
     var h=tf.querySelector('input[data-x="'+p[0]+'"]');
     if(!h){h=document.createElement('input');h.type='hidden';h.name=p[0];h.setAttribute('data-x',p[0]);tf.appendChild(h)}
