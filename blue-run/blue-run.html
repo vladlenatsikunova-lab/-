@@ -261,6 +261,7 @@ footer .wrap{align-items:center}
 
 .why-ph img{object-position:58% 60%}
 
+.t-rec:has(form.t-form){position:absolute!important;left:-9999px;top:0;width:1px;height:1px;overflow:hidden}
 </style>
 </head>
 <body>
@@ -548,7 +549,7 @@ footer .wrap{align-items:center}
         <div><label for="f-d">Дата</label><select id="f-d"><option>27–31 января 2027</option></select></div>
       </div>
       <label class="ok"><input type="checkbox" required> Я даю согласие на обработку персональных данных в соответствии с политикой конфиденциальности</label>
-      <button class="btn fill" type="submit">Отправить в Telegram <span class="ar">➤</span></button>
+      <button class="btn fill" type="submit">Отправить заявку <span class="ar">➤</span></button>
     </form>
   </div>
 </section>
@@ -560,9 +561,32 @@ const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.targ
 document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i%5)*80+'ms';io.observe(el)});
 document.getElementById('form').addEventListener('submit',function(e){
   e.preventDefault();
+  var f=this,btn=f.querySelector('button[type=submit]'),msg=f.querySelector('.fmsg');
+  if(!msg){msg=document.createElement('p');msg.className='fmsg';msg.style.cssText='margin-top:14px;font-size:13px;color:var(--sunset)';f.appendChild(msg)}
   var g=function(id){return document.getElementById(id).value};
-  var t='Заявка на Blue Run (Чили, Патагония)\nИмя: '+g('f-n')+'\nТелефон: '+g('f-p')+'\nЧеловек: '+g('f-c')+'\nДата: '+g('f-d');
-  window.open('https://t.me/MARIA_YAMAL?text='+encodeURIComponent(t),'_blank');
+  var tf=document.querySelector('.t-rec form.t-form, form.t-form');
+  if(!tf){msg.textContent='Не получилось отправить, напишите нам в Telegram @geo_hacking';return}
+  var nm=tf.querySelector('input[name=Name],input[name=name],input[type=text]');
+  var ph=tf.querySelector('input[type=tel],input[name=Phone],input[name=phone]');
+  var setv=function(el,v){el.value=v;['input','change','blur'].forEach(function(ev){el.dispatchEvent(new Event(ev,{bubbles:true}))})};
+  setv(nm,g('f-n'));setv(ph,g('f-p'));
+  [['Экспедиция','Blue Run, Чили · Патагония'],['Человек',g('f-c')],['Дата',g('f-d')]].forEach(function(p){
+    var h=tf.querySelector('input[data-x="'+p[0]+'"]');
+    if(!h){h=document.createElement('input');h.type='hidden';h.name=p[0];h.setAttribute('data-x',p[0]);tf.appendChild(h)}
+    h.value=p[1];
+  });
+  btn.disabled=true;msg.textContent='Отправляем…';
+  var sb=tf.querySelector('.t-submit,button[type=submit]');
+  sb.click();
+  var n=0,iv=setInterval(function(){
+    n++;
+    var ok=tf.querySelector('.js-successbox');
+    var okShown=ok&&getComputedStyle(ok).display!=='none'&&ok.offsetHeight>0||tf.closest('.t-rec').querySelector('.t-form__successbox.t-form__successbox_visible');
+    var er=tf.querySelector('.t-form__errorbox-middle');
+    if(okShown||tf.classList.contains('t-form_success')||(tf.querySelector('.t-form__successbox')&&getComputedStyle(tf.querySelector('.t-form__successbox')).display!=='none')){clearInterval(iv);msg.textContent='Заявка отправлена. Мы свяжемся с вами в ближайшее время.';f.reset();btn.disabled=false}
+    else if(er&&er.offsetHeight>0&&er.textContent.trim()){clearInterval(iv);msg.textContent='Проверьте имя и телефон: '+er.textContent.trim();btn.disabled=false}
+    else if(n>40){clearInterval(iv);msg.textContent='Не получилось отправить, напишите нам в Telegram @geo_hacking';btn.disabled=false}
+  },300);
 });
 </script>
 
